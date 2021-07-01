@@ -1,0 +1,43 @@
+service:
+  name: subasta-service
+
+plugins:
+  - serverless-bundle
+  - serverless-pseudo-parameters
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  memorySize: 256
+  stage: ${opt:stage, 'dev'}
+  region: eu-west-1
+  environment:
+    SUBASTA_TABLE_NAME: ${self:custom.SubastaTable.name}
+  iamRoleStatements:
+    - ${file(iam/SubastaTableIAM.yml):SubastaTableIAM}
+  
+resources:
+  Resources:
+    SubastaTable: ${file(resources/SubastaTable.yml):SubastaTable}
+
+functions:
+  crearSubasta:
+    handler: src/handlers/crearSubasta.handler
+    events:
+      - http:
+          method: POST
+          path: /subasta
+
+  getSubastas:
+    handler: src/handlers/getSubastas.handler
+    events:
+      - http:
+          method: GET
+          path: /subastas
+
+custom:
+  SubastaTable:
+    name: !Ref SubastaTable
+    arn: !GetAtt SubastaTable.Arn
+  bundle:
+    linting: false
